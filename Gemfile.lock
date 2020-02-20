@@ -1,0 +1,18 @@
+PATH
+  remote: .
+  specs:
+    docker-remote (1.0.0)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+
+PLATFORMS
+  ruby
+  x86_64-darwin-17
+
+DEPENDENCIES
+  docker-remote!
+
+BUNDLED WITH
+   1.17.3
