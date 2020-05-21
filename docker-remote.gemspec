@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
   s.version  = ::Docker::Remote::VERSION
   s.authors  = ['Cameron Dutro']
   s.email    = ['camertron@gmail.com']
-  s.homepage = 'http://github.com/camertron/docker-remote'
+  s.homepage = 'http://github.com/getkuby/docker-remote'
 
   s.description = s.summary = 'A Ruby client for communicating with the Docker HTTP API v2.'
 
