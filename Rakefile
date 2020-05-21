@@ -3,7 +3,6 @@ require 'rspec/core/rake_task'
 require 'rubygems/package_task'
 
 require 'docker/remote'
-require 'pry-byebug'
 
 Bundler::GemHelper.install_tasks
 
