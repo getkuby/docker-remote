@@ -8,10 +8,10 @@ Gem::Specification.new do |s|
   s.email    = ['camertron@gmail.com']
   s.homepage = 'http://github.com/getkuby/docker-remote'
 
-  s.description = s.summary = 'A Ruby client for communicating with the Docker HTTP API v2.'
+  s.description = s.summary = 'A Ruby client for communicating with the Docker registry API v2.'
 
   s.platform = Gem::Platform::RUBY
 
   s.require_path = 'lib'
-  s.files = Dir['{lib,spec}/**/*', 'Gemfile', 'CHANGELOG.md', 'README.md', 'Rakefile', 'docker-remote.gemspec']
+  s.files = Dir['{lib,spec}/**/*', 'Gemfile', 'CHANGELOG.md', 'LICENSE', 'README.md', 'Rakefile', 'docker-remote.gemspec']
 end
