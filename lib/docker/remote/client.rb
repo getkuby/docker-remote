@@ -4,6 +4,10 @@ require 'uri'
 
 module Docker
   module Remote
+    class DockerRemoteError < StandardError; end
+    class UnsupportedVersionError < DockerRemoteError; end
+    class UnexpectedResponseCodeError < DockerRemoteError; end
+
     class Client
       include Utils
 
@@ -43,24 +47,43 @@ module Docker
         @auth ||= begin
           request = Net::HTTP::Get.new('/v2/')
           response = registry_http.request(request)
-          auth = response['www-authenticate']
 
-          idx = auth.index(' ')
-          auth_type = auth[0..idx].strip
-
-          params = auth[idx..-1].split(',').each_with_object({}) do |param, ret|
-            key, value = param.split('=')
-            ret[key.strip] = value.strip[1..-2]  # remove quotes
-          end
-
-          case auth_type.downcase
-            when 'bearer'
-              BearerAuth.new(params, repo, username, password)
-            when 'basic'
-              BasicAuth.new(username, password)
+          case response.code
+            when '200'
+              NoAuth.instance
+            when '401'
+              www_auth(response)
+            when '404'
+              raise UnsupportedVersionError,
+                "the registry at #{registry_url} doesn't support v2 "\
+                  'of the Docker registry API'
             else
-              raise UnsupportedAuthTypeError, "unsupported Docker auth type '#{auth_type}'"
+              raise UnexpectedResponseCodeError,
+                "the registry at #{registry_url} responded with an "\
+                  "unexpected HTTP status code of #{response.code}"
           end
+        end
+      end
+
+      def www_auth(response)
+        auth = response['www-authenticate']
+
+        idx = auth.index(' ')
+        auth_type = auth[0..idx].strip
+
+        params = auth[idx..-1].split(',').each_with_object({}) do |param, ret|
+          key, value = param.split('=')
+          ret[key.strip] = value.strip[1..-2]  # remove quotes
+        end
+
+        case auth_type.downcase
+          when 'bearer'
+            BearerAuth.new(params, repo, username, password)
+          when 'basic'
+            BasicAuth.new(username, password)
+          else
+            raise UnsupportedAuthTypeError,
+              "unsupported Docker auth type '#{auth_type}'"
         end
       end
 
@@ -69,9 +92,10 @@ module Docker
       end
 
       def registry_http
-        @registry_http ||= Net::HTTP.new(registry_uri.host, registry_uri.port).tap do |http|
-          http.use_ssl = true if registry_uri.scheme == 'https'
-        end
+        @registry_http ||=
+          Net::HTTP.new(registry_uri.host, registry_uri.port).tap do |http|
+            http.use_ssl = true if registry_uri.scheme == 'https'
+          end
       end
     end
   end
