@@ -21,22 +21,19 @@ module Docker
       end
 
       def tags
-        request = auth.make_get("/v2/#{repo}/tags/list")
-        response = registry_http.request(request)
+        response = get("/v2/#{repo}/tags/list")
         potentially_raise_error!(response)
         JSON.parse(response.body)['tags']
       end
 
       def manifest_for(reference)
-        request = auth.make_get("/v2/#{repo}/manifests/#{reference}")
-        response = registry_http.request(request)
+        response = get("/v2/#{repo}/manifests/#{reference}")
         potentially_raise_error!(response)
         JSON.parse(response.body)
       end
 
       def catalog
-        request = auth.make_get("/v2/_catalog")
-        response = registry_http.request(request)
+        response = get("/v2/_catalog")
         potentially_raise_error!(response)
         JSON.parse(response.body)
       end
@@ -45,8 +42,7 @@ module Docker
 
       def auth
         @auth ||= begin
-          request = Net::HTTP::Get.new('/v2/')
-          response = registry_http.request(request)
+          response = get('/v2/', use_auth: nil)
 
           case response.code
             when '200'
@@ -87,15 +83,47 @@ module Docker
         end
       end
 
+      def get(path, http: registry_http, use_auth: auth, limit: 5)
+        if limit == 0
+          raise DockerRemoteError, 'too many redirects'
+        end
+
+        request = if use_auth
+          use_auth.make_get(path)
+        else
+          Net::HTTP::Get.new(path)
+        end
+
+        response = http.request(request)
+
+        case response
+          when Net::HTTPRedirection
+            redirect_uri = URI.parse(response['location'])
+            redirect_http = make_http(redirect_uri)
+            return get(
+              redirect_uri.path, {
+                http: redirect_http,
+                use_auth: use_auth,
+                limit: limit - 1
+              }
+            )
+        end
+
+        response
+      end
+
       def registry_uri
         @registry_uri ||= URI.parse(registry_url)
       end
 
+      def make_http(uri)
+        Net::HTTP.new(uri.host, uri.port).tap do |http|
+          http.use_ssl = true if uri.scheme == 'https'
+        end
+      end
+
       def registry_http
-        @registry_http ||=
-          Net::HTTP.new(registry_uri.host, registry_uri.port).tap do |http|
-            http.use_ssl = true if registry_uri.scheme == 'https'
-          end
+        @registry_http ||= make_http(registry_uri)
       end
     end
   end
