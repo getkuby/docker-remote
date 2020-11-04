@@ -1,3 +1,6 @@
+## 0.5.0
+* Figure out registry port more accurately.
+
 ## 0.4.0
 * Support redirection when making HTTP requests.
 
