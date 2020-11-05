@@ -1,5 +1,6 @@
 require 'json'
 require 'net/http'
+require 'socket'
 require 'uri'
 
 module Docker
@@ -118,8 +119,11 @@ module Docker
 
       def registry_uri
         @registry_uri ||= begin
+          puts "Attempting to parse registry_url, which is: '#{registry_url}'"
           host_port, *rest = registry_url.split('/')
           host, port = host_port.split(':')
+
+          puts "I think the host is '#{host}' and the port is '#{port}'"
 
           ports = if port
             [port.to_i]
@@ -128,6 +132,8 @@ module Docker
           else
             STANDARD_PORTS
           end
+
+          puts "I'm going to try connecting to these ports: #{ports.inspect}"
 
           port = ports.find { |port| can_connect?(host, port) }
 
