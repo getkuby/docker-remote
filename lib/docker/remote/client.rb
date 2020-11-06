@@ -119,27 +119,23 @@ module Docker
 
       def registry_uri
         @registry_uri ||= begin
-          puts "Attempting to parse registry_url, which is: '#{registry_url}'"
           host_port, *rest = registry_url.split('/')
-          host, port = host_port.split(':')
+          host, orig_port = host_port.split(':')
 
-          # puts "I think the host is '#{host}' and the port is '#{port}'"
+          port = if orig_port
+            orig_port.to_i
+          elsif prt = PORTMAP[host]
+            prt
+          else
+            STANDARD_PORTS.find do |prt|
+              can_connect?(host, prt)
+            end
+          end
 
-          # ports = if port
-          #   [port.to_i]
-          # elsif prt = PORTMAP[host]
-          #   [prt]
-          # else
-          #   STANDARD_PORTS
-          # end
-
-          # puts "I'm going to try connecting to these ports: #{ports.inspect}"
-
-          # port = ports.find { |port| can_connect?(host, port) }
-
-          # unless port
-          #   raise DockerRemoteError, "couldn't determine what port to connect to"
-          # end
+          unless port
+            raise DockerRemoteError,
+              "couldn't determine what port to connect to for '#{registry_url}'"
+          end
 
           scheme = port == DEFAULT_PORT ? 'https' : 'http'
           URI.parse("#{scheme}://#{host}:#{port}/#{rest.join('/')}")
