@@ -123,23 +123,23 @@ module Docker
           host_port, *rest = registry_url.split('/')
           host, port = host_port.split(':')
 
-          puts "I think the host is '#{host}' and the port is '#{port}'"
+          # puts "I think the host is '#{host}' and the port is '#{port}'"
 
-          ports = if port
-            [port.to_i]
-          elsif prt = PORTMAP[host]
-            [prt]
-          else
-            STANDARD_PORTS
-          end
+          # ports = if port
+          #   [port.to_i]
+          # elsif prt = PORTMAP[host]
+          #   [prt]
+          # else
+          #   STANDARD_PORTS
+          # end
 
-          puts "I'm going to try connecting to these ports: #{ports.inspect}"
+          # puts "I'm going to try connecting to these ports: #{ports.inspect}"
 
-          port = ports.find { |port| can_connect?(host, port) }
+          # port = ports.find { |port| can_connect?(host, port) }
 
-          unless port
-            raise DockerRemoteError, "couldn't determine what port to connect to"
-          end
+          # unless port
+          #   raise DockerRemoteError, "couldn't determine what port to connect to"
+          # end
 
           scheme = port == DEFAULT_PORT ? 'https' : 'http'
           URI.parse("#{scheme}://#{host}:#{port}/#{rest.join('/')}")
