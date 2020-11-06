@@ -184,18 +184,25 @@ module Docker
                 # Good news everybody, the socket is connected!
                 socket.close
                 return true
-              rescue
+              rescue => e
+                puts "Unexpected exception while checking port #{port}: #{e.message}"
+                puts e.backtrace.join("\n")
                 # An unexpected exception was raised - the connection is no good.
                 socket.close
               end
             else
               # IO.select returns nil when the socket is not ready before timeout
               # seconds have elapsed
+              puts "Timeout while checking port #{port}"
               socket.close
             end
+          rescue => e
+            puts "Unexpected exception while checking port #{port}: #{e.message}"
+            puts e.backtrace.join("\n")
           end
         end
 
+        puts "Fell through to false return for #{port}?"
         false
       end
     end
