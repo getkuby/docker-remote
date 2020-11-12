@@ -1,5 +1,6 @@
 require 'json'
 require 'net/http'
+require 'socket'
 require 'uri'
 
 module Docker
@@ -119,20 +120,21 @@ module Docker
       def registry_uri
         @registry_uri ||= begin
           host_port, *rest = registry_url.split('/')
-          host, port = host_port.split(':')
+          host, orig_port = host_port.split(':')
 
-          ports = if port
-            [port.to_i]
+          port = if orig_port
+            orig_port.to_i
           elsif prt = PORTMAP[host]
-            [prt]
+            prt
           else
-            STANDARD_PORTS
+            STANDARD_PORTS.find do |prt|
+              can_connect?(host, prt)
+            end
           end
 
-          port = ports.find { |port| can_connect?(host, port) }
-
           unless port
-            raise DockerRemoteError, "couldn't determine what port to connect to"
+            raise DockerRemoteError,
+              "couldn't determine what port to connect to for '#{registry_url}'"
           end
 
           scheme = port == DEFAULT_PORT ? 'https' : 'http'

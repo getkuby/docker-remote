@@ -1,3 +1,6 @@
+## 0.5.1
+* Just use given port if present, i.e. without checking it for connectivity.
+
 ## 0.5.0
 * Figure out registry port more accurately.
 
