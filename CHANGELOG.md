@@ -1,4 +1,4 @@
-## 0.5.2
+## 0.6.0
 * Raise `UnknownRepoError` if the registry returns the `NAME_UNKNOWN` error code, which indicates the repo has never been pushed to before.
 
 ## 0.5.1
