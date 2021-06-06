@@ -1,3 +1,6 @@
+## 0.5.2
+* Raise `UnknownRepoError` if the registry returns the `NAME_UNKNOWN` error code, which indicates the repo has never been pushed to before.
+
 ## 0.5.1
 * Just use given port if present, i.e. without checking it for connectivity.
 

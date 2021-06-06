@@ -1,3 +1,5 @@
+require 'json'
+
 module Docker
   module Remote
     module Utils
@@ -6,6 +8,13 @@ module Docker
           when 401
             raise UnauthorizedError, "401 Unauthorized: #{response.message}"
           when 404
+            json = JSON.parse(response.body) rescue {}
+            error = (json['errors'] || []).first || {}
+
+            if error['code'] == 'NAME_UNKNOWN'
+              raise UnknownRepoError, error['message']
+            end
+
             raise NotFoundError, "404 Not Found: #{response.message}"
         end
 

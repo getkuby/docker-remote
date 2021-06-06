@@ -4,6 +4,7 @@ module Docker
     class ServerError < StandardError; end
     class UnauthorizedError < ClientError; end
     class NotFoundError < ClientError; end
+    class UnknownRepoError < ClientError; end
 
     class UnsupportedAuthTypeError < StandardError; end
 
