@@ -12,7 +12,7 @@ module Docker
     class Client
       include Utils
 
-      attr_reader :registry_url, :repo, :username, :password
+      attr_reader :registry_url, :repo, :creds
 
       PORTMAP = { 'ghcr.io' => 443 }.freeze
       DEFAULT_PORT = 443
@@ -21,8 +21,7 @@ module Docker
       def initialize(registry_url, repo, username = nil, password = nil)
         @registry_url = registry_url
         @repo = repo
-        @username = username
-        @password = password
+        @creds = Credentials.new(username, password)
       end
 
       def tags
@@ -47,14 +46,14 @@ module Docker
 
       def auth
         @auth ||= begin
-          response = get('/v2/', use_auth: nil)
+          response = get('/v2/', use_auth: NoAuth.instance)
 
-          case response.code
-            when '200'
+          case response
+            when Net::HTTPSuccess
               NoAuth.instance
-            when '401'
-              www_auth(response)
-            when '404'
+            when Net::HTTPUnauthorized
+              www_auth(response).strategy
+            when Net::HTTPNotFound
               raise UnsupportedVersionError,
                 "the registry at #{registry_url} doesn't support v2 "\
                   'of the Docker registry API'
@@ -67,25 +66,7 @@ module Docker
       end
 
       def www_auth(response)
-        auth = response['www-authenticate']
-
-        idx = auth.index(' ')
-        auth_type = auth[0..idx].strip
-
-        params = auth[idx..-1].split(',').each_with_object({}) do |param, ret|
-          key, value = param.split('=')
-          ret[key.strip] = value.strip[1..-2]  # remove quotes
-        end
-
-        case auth_type.downcase
-          when 'bearer'
-            BearerAuth.new(params, repo, username, password)
-          when 'basic'
-            BasicAuth.new(username, password)
-          else
-            raise UnsupportedAuthTypeError,
-              "unsupported Docker auth type '#{auth_type}'"
-        end
+        AuthInfo.from_header(response['www-authenticate'], creds)
       end
 
       def get(path, http: registry_http, use_auth: auth, limit: 5)
@@ -93,24 +74,31 @@ module Docker
           raise DockerRemoteError, 'too many redirects'
         end
 
-        request = if use_auth
-          use_auth.make_get(path)
-        else
-          Net::HTTP::Get.new(path)
-        end
-
+        request = use_auth.make_get(path)
         response = http.request(request)
 
         case response
+          when Net::HTTPUnauthorized
+            auth_info = www_auth(response)
+
+            if auth_info.params['error'] == 'insufficient_scope'
+              if auth_info.params.include?('scope')
+                return get(
+                  path,
+                  http: http,
+                  use_auth: auth_info.strategy,
+                  limit: limit - 1
+                )
+              end
+            end
           when Net::HTTPRedirection
             redirect_uri = URI.parse(response['location'])
             redirect_http = make_http(redirect_uri)
             return get(
-              redirect_uri.path, {
-                http: redirect_http,
-                use_auth: use_auth,
-                limit: limit - 1
-              }
+              redirect_uri.path,
+              http: redirect_http,
+              use_auth: use_auth,
+              limit: limit - 1
             )
         end
 

@@ -1,3 +1,9 @@
+## 0.7.0
+* Support Azure Container Registry (ACR)
+  - ACR does two things differently than other registries like DockerHub, GitHub, etc:
+    1. OAuth tokens are returned under the `access_token` key instead of `token`.
+    1. The repo:<name>:pull scope is not enough to read metadata like the list of tags. You need the repo:<name>:metadata_read scope instead. Fortunately the www-authenticate header contains the scope you need to perform the operation.
+
 ## 0.6.0
 * Raise `UnknownRepoError` if the registry returns the `NAME_UNKNOWN` error code, which indicates the repo has never been pushed to before.
 

@@ -3,16 +3,15 @@ require 'net/http'
 module Docker
   module Remote
     class BasicAuth
-      attr_reader :username, :password
+      attr_reader :creds
 
-      def initialize(username, password)
-        @username = username
-        @password = password
+      def initialize(creds)
+        @creds = creds
       end
 
       def make_get(path)
         Net::HTTP::Get.new(path).tap do |request|
-          request.basic_auth(username, password)
+          request.basic_auth(creds.username, creds.password)
         end
       end
     end

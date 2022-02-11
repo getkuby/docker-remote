@@ -7,13 +7,11 @@ module Docker
     class BearerAuth
       include Utils
 
-      attr_reader :params, :repo, :username, :password
+      attr_reader :auth_info, :creds
 
-      def initialize(params, repo, username, password)
-        @params = params
-        @repo = repo
-        @username = username
-        @password = password
+      def initialize(auth_info, creds)
+        @auth_info = auth_info
+        @creds = creds
       end
 
       def make_get(path)
@@ -25,11 +23,11 @@ module Docker
       private
 
       def realm
-        @realm ||= URI.parse(params['realm'])
+        @realm ||= URI.parse(auth_info.params['realm'])
       end
 
       def service
-        @serivce ||= params['service']
+        @serivce ||= auth_info.params['service']
       end
 
       def token
@@ -37,17 +35,24 @@ module Docker
           http = Net::HTTP.new(realm.host, realm.port)
           http.use_ssl = true if realm.scheme == 'https'
 
+          url_params = { service: service }
+
+          if scope = auth_info.params['scope']
+            url_params[:scope] = scope
+          end
+
           request = Net::HTTP::Get.new(
-            "#{realm.request_uri}?service=#{service}&scope=repository:#{repo}:pull"
+            "#{realm.request_uri}?#{URI.encode_www_form(url_params)}"
           )
 
-          if username && password
-            request.basic_auth(username, password)
+          if creds.username && creds.password
+            request.basic_auth(creds.username, creds.password)
           end
 
           response = http.request(request)
           potentially_raise_error!(response)
-          JSON.parse(response.body)['token']
+          body_json = JSON.parse(response.body)
+          body_json['token'] || body_json['access_token']
         end
       end
     end
