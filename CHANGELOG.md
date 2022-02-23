@@ -1,3 +1,7 @@
+## 0.8.0
+* Raise a more specific `TooManyRetriesError` when the client tries too many times with various scopes, etc.
+  - This can happen if the repo doesn't exist yet and the API keeps responding with an error message of `insufficient_scope`.
+
 ## 0.7.0
 * Support Azure Container Registry (ACR)
   - ACR does two things differently than other registries like DockerHub, GitHub, etc:

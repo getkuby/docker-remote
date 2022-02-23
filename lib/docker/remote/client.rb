@@ -8,6 +8,7 @@ module Docker
     class DockerRemoteError < StandardError; end
     class UnsupportedVersionError < DockerRemoteError; end
     class UnexpectedResponseCodeError < DockerRemoteError; end
+    class TooManyRetriesError < DockerRemoteError; end
 
     class Client
       include Utils
@@ -71,7 +72,7 @@ module Docker
 
       def get(path, http: registry_http, use_auth: auth, limit: 5)
         if limit == 0
-          raise DockerRemoteError, 'too many redirects'
+          raise TooManyRetriesError, "too many retries contacting #{registry_uri.host}"
         end
 
         request = use_auth.make_get(path)
