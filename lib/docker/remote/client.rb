@@ -67,7 +67,7 @@ module Docker
       end
 
       def www_auth(response)
-        AuthInfo.from_header(response['www-authenticate'], creds)
+        AuthInfo.from_header(response['www-authenticate'], creds, repo)
       end
 
       def get(path, http: registry_http, use_auth: auth, limit: 5)

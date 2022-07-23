@@ -7,11 +7,12 @@ module Docker
     class BearerAuth
       include Utils
 
-      attr_reader :auth_info, :creds
+      attr_reader :auth_info, :creds, :repo
 
-      def initialize(auth_info, creds)
+      def initialize(auth_info, creds, repo)
         @auth_info = auth_info
         @creds = creds
+        @repo = repo
       end
 
       def make_get(path)
@@ -27,7 +28,7 @@ module Docker
       end
 
       def service
-        @serivce ||= auth_info.params['service']
+        @service ||= auth_info.params['service']
       end
 
       def token
@@ -35,7 +36,7 @@ module Docker
           http = Net::HTTP.new(realm.host, realm.port)
           http.use_ssl = true if realm.scheme == 'https'
 
-          url_params = { service: service }
+          url_params = { service: service, scope: "repository:#{repo}:pull" }
 
           if scope = auth_info.params['scope']
             url_params[:scope] = scope
